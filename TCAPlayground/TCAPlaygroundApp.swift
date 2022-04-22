@@ -7,11 +7,19 @@
 
 import SwiftUI
 
+import ComposableArchitecture
+
 @main
 struct TCAPlaygroundApp: App {
   var body: some Scene {
     WindowGroup {
-      ContentView()
+      ContentView(
+        store: Store(
+          initialState: AppState(),
+          reducer: appReducer,
+          environment: AppEnvironment()
+        )
+      )
     }
   }
 }
