@@ -15,8 +15,13 @@ struct TCAPlaygroundApp: App {
     WindowGroup {
       ContentView(
         store: Store(
-          initialState: AppState(),
-          reducer: appReducer,
+          initialState: AppState(
+            todos: [
+              Todo(id: UUID()),
+              Todo(id: UUID())
+            ]
+          ),
+          reducer: appReducer.debug(),
           environment: AppEnvironment()
         )
       )
