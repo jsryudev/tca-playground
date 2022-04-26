@@ -20,25 +20,39 @@ struct AppState: Equatable {
 }
 
 enum AppAction {
-  case todoCheckboxTapped(index: Int)
-  case todoTextFieldChanged(index: Int, text: String)
+  case todo(index: Int, action: TodoAction)
+}
+
+enum TodoAction {
+  case checkboxTapped
+  case textFieldChanged(text: String)
 }
 
 struct AppEnvironment {
   
 }
 
-let appReducer = Reducer<AppState, AppAction, AppEnvironment> { state, action, environment in
+struct TodoEnvironment {
+  
+}
+
+let todoReducer = Reducer<Todo, TodoAction, TodoEnvironment> { state, action, _ in
   switch action {
-  case let .todoCheckboxTapped(index):
-    state.todos[index].isComplete.toggle()
+  case .checkboxTapped:
+    state.isComplete.toggle()
     return .none
     
-  case let .todoTextFieldChanged(index, text):
-    state.todos[index].description = text
+  case .textFieldChanged(let text):
+    state.description = text
     return .none
   }
 }
+
+let appReducer: Reducer<AppState, AppAction, AppEnvironment> = todoReducer.forEach(
+  state: \AppState.todos,
+  action: /AppAction.todo(index:action:),
+  environment: { _ in TodoEnvironment() }
+)
 
 struct ContentView: View {
   let store: Store<AppState, AppAction>
@@ -47,23 +61,26 @@ struct ContentView: View {
     NavigationView {
       WithViewStore(self.store) { viewStore in
         List {
-          ForEach(Array(viewStore.todos.enumerated()), id: \.element.id) { index, todo in
-            HStack {
-              Button(action: { viewStore.send(.todoCheckboxTapped(index: index)) }) {
-                Image(systemName: todo.isComplete ? "checkmark.square" : "square")
-              }
-              .buttonStyle(.plain)
-              
-              TextField(
-                "Untitled Todo",
-                text: viewStore.binding(
-                  get: { $0.todos[index].description },
-                  send: { .todoTextFieldChanged(index: index, text: $0) }
+          ForEachStore(
+            self.store.scope(state: \.todos, action: AppAction.todo(index:action:))
+          ) { todoStore in
+            WithViewStore(todoStore) { todoViewStore in
+              HStack {
+                Button(action: { todoViewStore.send(.checkboxTapped) }) {
+                  Image(systemName: todoViewStore.isComplete ? "checkmark.square" : "square")
+                }
+                .buttonStyle(.plain)
+                
+                TextField(
+                  "Untitled Todo",
+                  text: todoViewStore.binding(
+                    get: \.description,
+                    send: TodoAction.textFieldChanged
+                  )
                 )
-              )
+              }
+              .foregroundColor(todoViewStore.isComplete ? .gray : nil)
             }
-            .foregroundColor(todo.isComplete ? .gray : nil)
-            
           }
         }
         .navigationBarTitle("Todos")
