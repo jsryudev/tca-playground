@@ -19,18 +19,18 @@ struct AppState: Equatable {
   var todos: [Todo] = []
 }
 
-enum AppAction {
+enum AppAction: Equatable {
   case addButtonTapped
   case todo(index: Int, action: TodoAction)
 }
 
-enum TodoAction {
+enum TodoAction: Equatable {
   case checkboxTapped
   case textFieldChanged(text: String)
 }
 
 struct AppEnvironment {
-  
+  var uuid: () -> UUID
 }
 
 struct TodoEnvironment {
@@ -55,10 +55,10 @@ let appReducer = Reducer<AppState, AppAction, AppEnvironment>.combine(
     action: /AppAction.todo(index:action:),
     environment: { _ in TodoEnvironment() }
   ),
-  Reducer { state, action, _ in
+  Reducer { state, action, environment in
     switch action {
     case .addButtonTapped:
-      state.todos.insert(Todo(id: UUID()), at: .zero)
+      state.todos.insert(Todo(id: environment.uuid()), at: .zero)
       return .none
       
     case .todo(index: _, action: _):
@@ -136,7 +136,9 @@ struct ContentView_Previews: PreviewProvider {
           ]
         ),
         reducer: appReducer,
-        environment: AppEnvironment()
+        environment: AppEnvironment(
+          uuid: { UUID(uuidString: "DEADBEEF-DEAD-BEEF-DEAD-BEEFDEADBEEF")! }
+        )
       )
     )
   }
