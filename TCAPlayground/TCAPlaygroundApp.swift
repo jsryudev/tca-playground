@@ -22,7 +22,9 @@ struct TCAPlaygroundApp: App {
             ]
           ),
           reducer: appReducer.debug(),
-          environment: AppEnvironment()
+          environment: AppEnvironment(
+            uuid: UUID.init
+          )
         )
       )
     }
