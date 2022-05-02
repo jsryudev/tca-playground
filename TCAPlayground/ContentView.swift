@@ -22,6 +22,7 @@ struct AppState: Equatable {
 enum AppAction: Equatable {
   case addButtonTapped
   case todo(index: Int, action: TodoAction)
+  case todoDelayCompleted
 }
 
 enum TodoAction: Equatable {
@@ -61,7 +62,24 @@ let appReducer = Reducer<AppState, AppAction, AppEnvironment>.combine(
       state.todos.insert(Todo(id: environment.uuid()), at: .zero)
       return .none
       
-    case .todo(index: _, action: _):
+    case .todo(index: _, action: .checkboxTapped):
+      struct CancelDelayId: Hashable {}
+      
+      return Effect(value: .todoDelayCompleted)
+        .delay(for: 1, scheduler: DispatchQueue.main)
+        .eraseToEffect()
+        .cancellable(id: CancelDelayId(), cancelInFlight: true)
+      
+    case .todoDelayCompleted:
+      state.todos = state.todos
+        .enumerated()
+        .sorted(by: { lhs, rhs in
+          (rhs.element.isComplete && !lhs.element.isComplete) || lhs.offset < rhs.offset
+        })
+        .map(\.element)
+      return .none
+      
+    default:
       return .none
     }
   }
