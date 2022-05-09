@@ -31,6 +31,7 @@ enum TodoAction: Equatable {
 }
 
 struct AppEnvironment {
+  var mainQueue: AnySchedulerOf<DispatchQueue>
   var uuid: () -> UUID
 }
 
@@ -66,9 +67,7 @@ let appReducer = Reducer<AppState, AppAction, AppEnvironment>.combine(
       struct CancelDelayId: Hashable {}
       
       return Effect(value: .todoDelayCompleted)
-        .delay(for: 1, scheduler: DispatchQueue.main)
-        .eraseToEffect()
-        .cancellable(id: CancelDelayId(), cancelInFlight: true)
+        .debounce(id: CancelDelayId(), for: 1, scheduler: environment.mainQueue)
       
     case .todoDelayCompleted:
       state.todos = state.todos
@@ -155,6 +154,7 @@ struct ContentView_Previews: PreviewProvider {
         ),
         reducer: appReducer,
         environment: AppEnvironment(
+          mainQueue: DispatchQueue.main.eraseToAnyScheduler(),
           uuid: { UUID(uuidString: "DEADBEEF-DEAD-BEEF-DEAD-BEEFDEADBEEF")! }
         )
       )
