@@ -23,6 +23,7 @@ struct TCAPlaygroundApp: App {
           ),
           reducer: appReducer.debug(),
           environment: AppEnvironment(
+            mainQueue: DispatchQueue.main.eraseToAnyScheduler(),
             uuid: UUID.init
           )
         )
